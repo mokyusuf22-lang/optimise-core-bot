@@ -21,16 +21,16 @@ const SelectRole = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSelectRole = async (role: AppRole) => {
+  const handleSelectRole = async (selectedRole: AppRole) => {
     if (!user) return;
-    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role });
+    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: selectedRole });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Role assigned", description: `You are now logged in as ${roles.find(r => r.role === role)?.label}.` });
-    // Force refresh to pick up new role
-    window.location.href = "/dashboard";
+    await refreshRole();
+    toast({ title: "Role assigned", description: `You are now logged in as ${roles.find(r => r.role === selectedRole)?.label}.` });
+    navigate("/dashboard");
   };
 
   return (
