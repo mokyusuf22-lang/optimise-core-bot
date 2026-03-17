@@ -43,6 +43,13 @@ const Login = () => {
     });
     if (error) {
       toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
+    // Auto-login after signup (handles cases where email confirmation is pending)
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+    if (loginError) {
+      toast({ title: "Account created", description: "Please check your email to confirm, then sign in." });
     } else {
       toast({ title: "Account created", description: "Please select your role to continue." });
       navigate("/select-role");
