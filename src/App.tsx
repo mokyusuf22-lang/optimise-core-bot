@@ -24,17 +24,19 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/select-role" element={<SelectRole />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard/onboarding" element={<ProtectedRoute><OnboardingDashboard /></ProtectedRoute>} />
-            <Route path="/dashboard/attrition" element={<ProtectedRoute><AttritionDashboard /></ProtectedRoute>} />
-            <Route path="/dashboard/burnout" element={<ProtectedRoute><BurnoutDashboard /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <PalDChatbot />
+          <DashboardViewProvider>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/select-role" element={<SelectRole />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/dashboard/onboarding" element={<ProtectedRoute><OnboardingDashboard /></ProtectedRoute>} />
+              <Route path="/dashboard/attrition" element={<ProtectedRoute><AttritionDashboard /></ProtectedRoute>} />
+              <Route path="/dashboard/burnout" element={<ProtectedRoute><BurnoutDashboard /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <PalDChatbot />
+          </DashboardViewProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
