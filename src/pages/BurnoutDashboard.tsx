@@ -8,32 +8,40 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar } from "recharts";
 import { motion } from "framer-motion";
 
-const trendData = [
-  { month: "Oct", burnout: 45, overtime: 12, sickLeave: 6 },
-  { month: "Nov", burnout: 52, overtime: 16, sickLeave: 8 },
-  { month: "Dec", burnout: 58, overtime: 20, sickLeave: 10 },
-  { month: "Jan", burnout: 65, overtime: 24, sickLeave: 13 },
-  { month: "Feb", burnout: 72, overtime: 26, sickLeave: 14 },
-  { month: "Mar", burnout: 78, overtime: 28, sickLeave: 15 },
+// Real data from User_Story_Data.xlsx — 484 employees with burnout metrics
+const teamData = [
+  { team: "AI Lab", overtime: 20.4, sickLeave: 1.2, burnoutScore: 45, wellbeing: 2.4, prediction: "High workload & low wellbeing — monitor closely" },
+  { team: "Engineering", overtime: 13.5, sickLeave: 1.2, burnoutScore: 31, wellbeing: 3.3, prediction: "Moderate risk — overtime trending up" },
+  { team: "Customer Support", overtime: 8.0, sickLeave: 2.1, burnoutScore: 29, wellbeing: 2.7, prediction: "Sick leave elevated — emotional toll risk" },
+  { team: "Product", overtime: 8.7, sickLeave: 1.1, burnoutScore: 22, wellbeing: 3.6, prediction: "Stable but watch workload backlog" },
+  { team: "Operations", overtime: 5.0, sickLeave: 0.7, burnoutScore: 18, wellbeing: 3.4, prediction: "Stable" },
+  { team: "Sales", overtime: 6.1, sickLeave: 0.5, burnoutScore: 15, wellbeing: 4.0, prediction: "Healthy" },
+  { team: "Legal", overtime: 5.3, sickLeave: 0.0, burnoutScore: 13, wellbeing: 4.1, prediction: "Healthy" },
+  { team: "Marketing", overtime: 4.1, sickLeave: 0.5, burnoutScore: 12, wellbeing: 4.0, prediction: "Healthy" },
+  { team: "Content", overtime: 4.0, sickLeave: 0.5, burnoutScore: 11, wellbeing: 4.2, prediction: "Healthy" },
+  { team: "Finance", overtime: 1.5, sickLeave: 0.1, burnoutScore: 6, wellbeing: 4.4, prediction: "Healthy" },
+  { team: "HR", overtime: 1.4, sickLeave: 0.0, burnoutScore: 4, wellbeing: 4.6, prediction: "Healthy" },
 ];
 
-const teamData = [
-  { team: "Engineering", overtime: 28, sickLeave: 15, burnoutScore: 78, prediction: "Attrition risk within 6–8 weeks" },
-  { team: "Customer Support", overtime: 22, sickLeave: 10, burnoutScore: 62, prediction: "Performance decline likely within 4 weeks" },
-  { team: "Sales", overtime: 15, sickLeave: 5, burnoutScore: 38, prediction: "Stable" },
-  { team: "Operations", overtime: 18, sickLeave: 12, burnoutScore: 55, prediction: "Monitor closely" },
-  { team: "Finance", overtime: 8, sickLeave: 3, burnoutScore: 20, prediction: "Healthy" },
+// Simulated monthly trend based on aggregate data
+const trendData = [
+  { month: "Oct", burnout: 22, overtime: 8, sickLeave: 0.6 },
+  { month: "Nov", burnout: 25, overtime: 8.5, sickLeave: 0.7 },
+  { month: "Dec", burnout: 28, overtime: 9, sickLeave: 0.8 },
+  { month: "Jan", burnout: 30, overtime: 9.2, sickLeave: 0.9 },
+  { month: "Feb", burnout: 32, overtime: 9.5, sickLeave: 0.9 },
+  { month: "Mar", burnout: 34, overtime: 10, sickLeave: 1.0 },
 ];
 
 const chartConfig = {
   burnout: { label: "Burnout Score", color: "hsl(var(--destructive))" },
-  overtime: { label: "Overtime %", color: "hsl(var(--primary))" },
-  sickLeave: { label: "Sick Leave %", color: "hsl(var(--accent))" },
+  overtime: { label: "Avg Overtime (hrs)", color: "hsl(var(--primary))" },
+  sickLeave: { label: "Avg Sick Leave (days)", color: "hsl(var(--accent))" },
 };
 
 const burnoutColor = (score: number) => {
-  if (score >= 60) return "destructive" as const;
-  if (score >= 40) return "secondary" as const;
+  if (score >= 40) return "destructive" as const;
+  if (score >= 25) return "secondary" as const;
   return "outline" as const;
 };
 
@@ -51,8 +59,8 @@ const BurnoutDashboard = () => {
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               {isExec
-                ? "Key metrics and trends at a glance."
-                : "Early warning system for team burnout, enabling targeted interventions."}
+                ? "Key metrics across 484 employees with capacity data."
+                : "Early warning system for team burnout across 484 employees, enabling targeted interventions."}
             </p>
           </div>
           <DashboardViewToggle />
@@ -62,8 +70,8 @@ const BurnoutDashboard = () => {
         <Card className="mb-6 border-destructive/30 bg-destructive/5">
           <CardContent className="py-4">
             <p className="text-sm font-medium">
-              <span className="font-bold">Pal-D Alert:</span> Engineering team shows high burnout risk (78/100). Overtime +28%, sick leave +15% over 4 weeks.
-              {isExec ? "" : " Model predicts significant increase in voluntary attrition within 6–8 weeks without intervention."}
+              <span className="font-bold">Pal-D Alert:</span> AI Lab shows highest burnout risk (score 45/100). Avg overtime 20.4 hrs/week, wellbeing 2.4/5, workload backlog at 80 items.
+              {isExec ? "" : " Customer Support also elevated with highest sick leave (2.1 days/3mo) and low wellbeing (2.7/5)."}
             </p>
           </CardContent>
         </Card>
@@ -71,10 +79,10 @@ const BurnoutDashboard = () => {
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[
-            { label: "Teams at Risk", value: "2" },
-            { label: "Avg Overtime Delta", value: "+18%" },
-            { label: "Sick Leave Trend", value: "+9%" },
-            { label: "Well-being Score", value: "62/100" },
+            { label: "Teams Elevated Risk", value: "3" },
+            { label: "Avg Overtime", value: "9.2 hrs/wk" },
+            { label: "Avg Sick Leave", value: "0.9 days/3mo" },
+            { label: "Well-being Score", value: "3.5/5" },
           ].map((kpi) => (
             <Card key={kpi.label}>
               <CardHeader className="pb-2">
@@ -121,8 +129,8 @@ const BurnoutDashboard = () => {
                   <thead>
                     <tr className="border-b text-left">
                       <th className="pb-3 font-medium text-muted-foreground">Team</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Overtime Δ</th>
-                      <th className="pb-3 font-medium text-muted-foreground">Sick Leave Δ</th>
+                      <th className="pb-3 font-medium text-muted-foreground">Overtime (hrs/wk)</th>
+                      <th className="pb-3 font-medium text-muted-foreground">Sick Leave (days)</th>
                       <th className="pb-3 font-medium text-muted-foreground">Burnout Score</th>
                       <th className="pb-3 font-medium text-muted-foreground">Prediction</th>
                     </tr>
@@ -131,8 +139,8 @@ const BurnoutDashboard = () => {
                     {teamData.map((team) => (
                       <tr key={team.team} className="border-b last:border-0">
                         <td className="py-3 font-medium">{team.team}</td>
-                        <td className="py-3 text-muted-foreground">+{team.overtime}%</td>
-                        <td className="py-3 text-muted-foreground">+{team.sickLeave}%</td>
+                        <td className="py-3 text-muted-foreground">{team.overtime}</td>
+                        <td className="py-3 text-muted-foreground">{team.sickLeave}</td>
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             <Progress value={team.burnoutScore} className="h-1.5 w-16" />
