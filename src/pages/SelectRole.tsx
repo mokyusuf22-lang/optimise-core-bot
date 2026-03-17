@@ -17,7 +17,7 @@ const roles: { role: AppRole; label: string; description: string; icon: typeof U
 ];
 
 const SelectRole = () => {
-  const { user } = useAuth();
+  const { user, refreshRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
