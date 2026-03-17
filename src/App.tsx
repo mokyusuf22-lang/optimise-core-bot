@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import OnboardingDashboard from "./pages/OnboardingDashboard";
 import AttritionDashboard from "./pages/AttritionDashboard";
 import BurnoutDashboard from "./pages/BurnoutDashboard";
+import DataReadiness from "./pages/DataReadiness";
 import NotFound from "./pages/NotFound";
 import PalDChatbot from "./components/PalDChatbot";
 
