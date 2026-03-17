@@ -38,11 +38,33 @@ const systemKnowledge = {
   },
 };
 
+const suggestedPromptsByRoute: Record<string, string[]> = {
+  "/dashboard": [
+    "Which area needs attention first?",
+    "Show me key risks across all teams",
+    "What are the top 3 priorities this quarter?",
+  ],
+  "/dashboard/onboarding": [
+    "Which new joiners are most at risk?",
+    "How do I reduce onboarding drop-off?",
+    "What's driving low manager engagement?",
+  ],
+  "/dashboard/attrition": [
+    "Why are Sales high-performers leaving?",
+    "What retention strategies should I use?",
+    "Compare attrition risk across departments",
+  ],
+  "/dashboard/burnout": [
+    "What's causing Engineering burnout?",
+    "How can I reduce overtime immediately?",
+    "Recommend interventions for at-risk teams",
+  ],
+};
+
 function generateResponse(input: string, currentPath: string): Message {
   const lower = input.toLowerCase();
   const id = Date.now().toString();
 
-  // Navigation help
   if (lower.includes("navigate") || lower.includes("go to") || lower.includes("show me") || lower.includes("where")) {
     return {
       id, role: "assistant",
@@ -56,11 +78,10 @@ function generateResponse(input: string, currentPath: string): Message {
     };
   }
 
-  // Recommendations
-  if (lower.includes("recommend") || lower.includes("suggestion") || lower.includes("what should") || lower.includes("what can") || lower.includes("options") || lower.includes("intervention")) {
+  if (lower.includes("recommend") || lower.includes("suggestion") || lower.includes("what should") || lower.includes("what can") || lower.includes("options") || lower.includes("intervention") || lower.includes("how can") || lower.includes("how do")) {
     let area: "burnout" | "attrition" | "onboarding" = "burnout";
     if (lower.includes("attrition") || lower.includes("retention") || lower.includes("leav")) area = "attrition";
-    else if (lower.includes("onboard") || lower.includes("new joiner") || lower.includes("new hire")) area = "onboarding";
+    else if (lower.includes("onboard") || lower.includes("new joiner") || lower.includes("new hire") || lower.includes("drop-off")) area = "onboarding";
     else if (currentPath.includes("attrition")) area = "attrition";
     else if (currentPath.includes("onboarding")) area = "onboarding";
 
@@ -69,47 +90,61 @@ function generateResponse(input: string, currentPath: string): Message {
     return { id, role: "assistant", content };
   }
 
-  // Current page context
   if (lower.includes("what") && (lower.includes("this") || lower.includes("page") || lower.includes("here"))) {
     const desc = systemKnowledge.navigation[currentPath as keyof typeof systemKnowledge.navigation] || "You're viewing the Mission Control platform.";
     return { id, role: "assistant", content: `You're currently on: **${desc}**\n\nWould you like recommendations for this area, or would you like to navigate somewhere else?` };
   }
 
-  // Burnout specific
-  if (lower.includes("burnout") || lower.includes("overtime") || lower.includes("capacity")) {
+  if (lower.includes("priority") || lower.includes("attention") || lower.includes("first") || lower.includes("key risk")) {
+    return {
+      id, role: "assistant",
+      content: "**Top Priorities Right Now:**\n\n**1. Engineering Burnout** — Score 78/100, attrition predicted in 6–8 weeks\n**2. Sales Attrition** — High performers 2.3x more likely to leave\n**3. Onboarding Drop-off** — Ops new joiners at 35% higher risk\n\nWould you like intervention options for any of these?",
+      actions: [
+        { label: "🔥 Burnout Actions", route: "/dashboard/burnout" },
+        { label: "⚠️ Attrition Actions", route: "/dashboard/attrition" },
+        { label: "👥 Onboarding Actions", route: "/dashboard/onboarding" },
+      ],
+    };
+  }
+
+  if (lower.includes("burnout") || lower.includes("overtime") || lower.includes("capacity") || lower.includes("engineering")) {
     const recs = systemKnowledge.recommendations.burnout;
     return { id, role: "assistant", content: `**Burnout Risk Analysis:**\n\nEngineering is the highest-risk team with a burnout score of 78/100. Here are my recommendations:\n\n${recs.map((r, i) => `**${i + 1}. ${r.title}** — ${r.desc}`).join("\n\n")}`,
       actions: [{ label: "View Burnout Dashboard", route: "/dashboard/burnout" }],
     };
   }
 
-  // Attrition
-  if (lower.includes("attrition") || lower.includes("leav") || lower.includes("quit") || lower.includes("retention")) {
+  if (lower.includes("attrition") || lower.includes("leav") || lower.includes("quit") || lower.includes("retention") || lower.includes("sales")) {
     const recs = systemKnowledge.recommendations.attrition;
-    return { id, role: "assistant", content: `**Attrition Risk Summary:**\n\n18% overall risk. Sales high-performers are 2.3x more likely to leave. Here are intervention options:\n\n${recs.map((r, i) => `**${i + 1}. ${r.title}** — ${r.desc}`).join("\n\n")}`,
+    return { id, role: "assistant", content: `**Attrition Risk Summary:**\n\n18% overall risk. Sales high-performers are 2.3x more likely to leave. Intervention options:\n\n${recs.map((r, i) => `**${i + 1}. ${r.title}** — ${r.desc}`).join("\n\n")}`,
       actions: [{ label: "View Attrition Dashboard", route: "/dashboard/attrition" }],
     };
   }
 
-  // Onboarding
-  if (lower.includes("onboard") || lower.includes("new hire") || lower.includes("new joiner")) {
+  if (lower.includes("onboard") || lower.includes("new hire") || lower.includes("new joiner") || lower.includes("manager engagement")) {
     const recs = systemKnowledge.recommendations.onboarding;
     return { id, role: "assistant", content: `**Onboarding Effectiveness:**\n\n23% risk score overall. Ops department has 35% higher drop-off. Recommendations:\n\n${recs.map((r, i) => `**${i + 1}. ${r.title}** — ${r.desc}`).join("\n\n")}`,
       actions: [{ label: "View Onboarding Dashboard", route: "/dashboard/onboarding" }],
     };
   }
 
-  // Default
+  if (lower.includes("compare") || lower.includes("across")) {
+    return {
+      id, role: "assistant",
+      content: "**Cross-Department Risk Comparison:**\n\n| Department | Attrition Risk | Burnout | Onboarding |\n|---|---|---|---|\n| Engineering | 1.8x | 78/100 🔴 | Low |\n| Sales | 2.3x 🔴 | 38/100 | Low |\n| Operations | 1.5x | 55/100 | High 🔴 |\n| Finance | 1.3x | 20/100 | Medium |\n| Customer Support | — | 62/100 | — |\n\nEngineering and Sales need the most urgent attention.",
+    };
+  }
+
   return {
     id, role: "assistant",
-    content: "I'm **Pal-D**, your diagnostic AI assistant. I can help you:\n\n• **Navigate** the platform — just ask me to show you a section\n• **Get recommendations** for burnout, attrition, or onboarding risks\n• **Explain** what you're looking at on any page\n\nTry asking: *\"What are my options for reducing attrition?\"*",
+    content: "I'm **Pal-D**, your diagnostic AI assistant. I can help you:\n\n• **Navigate** the platform\n• **Get recommendations** for burnout, attrition, or onboarding\n• **Explain** what you're looking at\n• **Prioritise** across all risk areas\n\nTry one of the prompts above, or ask me anything!",
   };
 }
 
 const PalDChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { id: "welcome", role: "assistant", content: "Hey! I'm **Pal-D** 👋 Your AI diagnostic assistant.\n\nI can help you navigate the platform, explore insights, and get actionable recommendations. What would you like to know?" },
+    { id: "welcome", role: "assistant", content: "Hey! I'm **Pal-D** 👋 Your AI diagnostic assistant.\n\nI can help you navigate, explore insights, and get actionable recommendations. Try the prompts above or ask me anything!" },
   ]);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -120,14 +155,15 @@ const PalDChatbot = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = useCallback(() => {
-    if (!input.trim()) return;
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: input };
+  const handleSend = useCallback((text?: string) => {
+    const msg = text || input;
+    if (!msg.trim()) return;
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: msg };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
     setTimeout(() => {
-      const response = generateResponse(input, location.pathname);
+      const response = generateResponse(msg, location.pathname);
       setMessages((prev) => [...prev, response]);
     }, 400);
   }, [input, location.pathname]);
@@ -138,6 +174,8 @@ const PalDChatbot = () => {
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n/g, '<br/>');
   };
+
+  const suggestedPrompts = suggestedPromptsByRoute[location.pathname] || suggestedPromptsByRoute["/dashboard"];
 
   return (
     <>
@@ -166,7 +204,7 @@ const PalDChatbot = () => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] rounded-2xl bg-card border border-border shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 z-50 w-[380px] h-[540px] rounded-2xl bg-card border border-border shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground">
@@ -184,6 +222,22 @@ const PalDChatbot = () => {
               <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => setIsOpen(false)}>
                 <X className="h-4 w-4" />
               </Button>
+            </div>
+
+            {/* Suggested prompts — above messages */}
+            <div className="px-3 py-2 border-b border-border bg-muted/30">
+              <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">Suggested</p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => handleSend(prompt)}
+                    className="text-[10px] px-2.5 py-1 rounded-full bg-card border border-border text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Messages */}
@@ -227,17 +281,6 @@ const PalDChatbot = () => {
                   <Send className="h-4 w-4" />
                 </Button>
               </form>
-              <div className="flex gap-1.5 mt-2 overflow-x-auto">
-                {["Recommendations", "Navigate", "What's this page?"].map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => { setInput(q); }}
-                    className="text-[10px] px-2 py-1 rounded-md bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors whitespace-nowrap"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
             </div>
           </motion.div>
         )}
