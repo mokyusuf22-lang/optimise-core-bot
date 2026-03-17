@@ -34,6 +34,7 @@ const App = () => (
               <Route path="/dashboard/onboarding" element={<ProtectedRoute><OnboardingDashboard /></ProtectedRoute>} />
               <Route path="/dashboard/attrition" element={<ProtectedRoute><AttritionDashboard /></ProtectedRoute>} />
               <Route path="/dashboard/burnout" element={<ProtectedRoute><BurnoutDashboard /></ProtectedRoute>} />
+              <Route path="/dashboard/data-readiness" element={<ProtectedRoute><DataReadiness /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <PalDChatbot />

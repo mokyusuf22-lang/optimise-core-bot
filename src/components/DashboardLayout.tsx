@@ -16,6 +16,7 @@ const navItems = [
   { to: "/dashboard/onboarding", icon: Users, label: "Onboarding" },
   { to: "/dashboard/attrition", icon: AlertTriangle, label: "Attrition Risk" },
   { to: "/dashboard/burnout", icon: Activity, label: "Burnout & Capacity" },
+  { to: "/dashboard/data-readiness", icon: Database, label: "Data Readiness" },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
