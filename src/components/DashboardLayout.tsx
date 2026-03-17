@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Users, AlertTriangle, Activity, Settings } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, AlertTriangle, Activity, Database } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,7 @@ const navItems = [
   { to: "/dashboard/onboarding", icon: Users, label: "Onboarding" },
   { to: "/dashboard/attrition", icon: AlertTriangle, label: "Attrition Risk" },
   { to: "/dashboard/burnout", icon: Activity, label: "Burnout & Capacity" },
+  { to: "/dashboard/data-readiness", icon: Database, label: "Data Readiness" },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
