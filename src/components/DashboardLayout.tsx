@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Users, AlertTriangle, Activity, Settings } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, AlertTriangle, Activity, Database } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
