@@ -21,11 +21,18 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
-    } else {
+      setIsLoading(false);
+      return;
+    }
+    // Check if user already has a role assigned
+    const { data: existingRole } = await supabase.rpc("get_user_role", { _user_id: data.user.id });
+    if (existingRole) {
       navigate("/dashboard");
+    } else {
+      navigate("/select-role");
     }
     setIsLoading(false);
   };
