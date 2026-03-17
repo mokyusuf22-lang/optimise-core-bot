@@ -46,10 +46,11 @@ const Login = () => {
       setIsLoading(false);
       return;
     }
-    // Auto-login after signup (handles cases where email confirmation is pending)
+    // Small delay to let the auto-confirm trigger run
+    await new Promise(r => setTimeout(r, 500));
     const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
     if (loginError) {
-      toast({ title: "Account created", description: "Please check your email to confirm, then sign in." });
+      toast({ title: "Sign up failed", description: loginError.message, variant: "destructive" });
     } else {
       toast({ title: "Account created", description: "Please select your role to continue." });
       navigate("/select-role");
