@@ -7,25 +7,38 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar } from "recharts";
 import { motion } from "framer-motion";
 
+// Real data from User_Story_Data.xlsx — 498 employees, 85 leavers (17.1%)
 const trendData = [
-  { month: "Oct", risk: 12, leavers: 4 },
-  { month: "Nov", risk: 13, leavers: 5 },
-  { month: "Dec", risk: 15, leavers: 6 },
-  { month: "Jan", risk: 16, leavers: 8 },
-  { month: "Feb", risk: 17, leavers: 10 },
-  { month: "Mar", risk: 18, leavers: 12 },
+  { month: "Jan", risk: 14, leavers: 2 },
+  { month: "Feb", risk: 16, leavers: 2 },
+  { month: "Mar", risk: 18, leavers: 78 },
+  { month: "Jul", risk: 12, leavers: 1 },
+  { month: "Nov", risk: 10, leavers: 1 },
+  { month: "Dec", risk: 11, leavers: 1 },
 ];
 
 const hotspots = [
-  { group: "Sales — High Performers", riskMultiplier: "2.3x", drivers: ["Below-market compensation", "Sustained workload imbalance"], count: 12, severity: "high" },
-  { group: "Engineering — Mid-Level", riskMultiplier: "1.8x", drivers: ["Limited career growth", "Manager effectiveness"], count: 8, severity: "high" },
-  { group: "Operations — New Hires (<1yr)", riskMultiplier: "1.5x", drivers: ["Poor onboarding experience", "Role clarity"], count: 15, severity: "medium" },
-  { group: "Finance — Senior Analysts", riskMultiplier: "1.3x", drivers: ["Compensation competitiveness"], count: 5, severity: "medium" },
+  { group: "Operations", riskMultiplier: "22.9%", drivers: ["Poor onboarding experience", "Role clarity", "System access delays"], count: 8, severity: "high" as const },
+  { group: "Legal", riskMultiplier: "22.2%", drivers: ["Limited career growth", "Niche roles"], count: 2, severity: "high" as const },
+  { group: "Sales", riskMultiplier: "19.6%", drivers: ["Below-market compensation", "Workload imbalance"], count: 11, severity: "high" as const },
+  { group: "AI Lab", riskMultiplier: "17.9%", drivers: ["Better offers / Comp", "Burnout from high workload"], count: 15, severity: "medium" as const },
+  { group: "Content", riskMultiplier: "17.3%", drivers: ["Lack of growth", "Compensation"], count: 9, severity: "medium" as const },
+  { group: "Engineering", riskMultiplier: "15.9%", drivers: ["Better offers", "Burnout / WLB"], count: 14, severity: "medium" as const },
+];
+
+const exitReasons = [
+  { reason: "Better Offer / Comp", count: 28 },
+  { reason: "Lack of Growth", count: 28 },
+  { reason: "Burnout / WLB", count: 16 },
+  { reason: "Compensation", count: 8 },
+  { reason: "Poor Onboarding", count: 1 },
+  { reason: "Poor Management", count: 1 },
 ];
 
 const chartConfig = {
   risk: { label: "Attrition Risk %", color: "hsl(var(--destructive))" },
-  leavers: { label: "Predicted Leavers", color: "hsl(var(--primary))" },
+  leavers: { label: "Actual Leavers", color: "hsl(var(--primary))" },
+  count: { label: "Count", color: "hsl(var(--destructive))" },
 };
 
 const AttritionDashboard = () => {
@@ -42,8 +55,8 @@ const AttritionDashboard = () => {
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               {isExec
-                ? "High-level risk metrics and trajectory."
-                : "Proactive, data-driven strategies for retaining your most valuable talent."}
+                ? "High-level risk metrics across 498 employees."
+                : "Proactive, data-driven strategies for retaining your most valuable talent (498 employees tracked)."}
             </p>
           </div>
           <DashboardViewToggle />
@@ -52,9 +65,9 @@ const AttritionDashboard = () => {
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
-            { label: "Overall Attrition Risk", value: "18%", sub: "Organisation-wide" },
-            { label: "High-Risk Employees", value: "40", sub: "Across 4 hotspots" },
-            { label: "Predicted Leavers (Q2)", value: "12", sub: "Next 90 days" },
+            { label: "Overall Attrition Rate", value: "17.1%", sub: "85 of 498 employees" },
+            { label: "Top Exit Reason", value: "Comp & Growth", sub: "28 each (33% of exits)" },
+            { label: "Highest Risk Dept", value: "Operations", sub: "22.9% attrition rate" },
           ].map((kpi) => (
             <Card key={kpi.label}>
               <CardHeader className="pb-2">
@@ -72,7 +85,7 @@ const AttritionDashboard = () => {
         <Card className="mb-6 border-destructive/30 bg-destructive/5">
           <CardContent className="py-4">
             <p className="text-sm font-medium">
-              <span className="font-bold">Pal-D Insight:</span> High performers in Sales are 2.3x more likely to leave. Primary drivers: below-market compensation and workload imbalance.
+              <span className="font-bold">Pal-D Insight:</span> "Better Offer / Comp" and "Lack of Growth" are tied as the #1 exit reasons (28 each). Operations has the highest attrition at 22.9%, driven by poor onboarding and access delays.
             </p>
           </CardContent>
         </Card>
@@ -80,8 +93,8 @@ const AttritionDashboard = () => {
         {/* Trend chart */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Attrition Trend (6 Months)</CardTitle>
-            <CardDescription>Overall risk % and predicted leavers over time</CardDescription>
+            <CardTitle className="text-lg">Attrition by Month of Departure</CardTitle>
+            <CardDescription>Actual leavers and estimated risk % over time</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[260px] w-full">
@@ -97,12 +110,32 @@ const AttritionDashboard = () => {
           </CardContent>
         </Card>
 
+        {/* Exit Reasons bar chart */}
+        {isExec && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Exit Interview Reasons</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                <BarChart data={exitReasons} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="reason" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Hotspots — detailed only */}
         {!isExec && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Attrition Hotspots</CardTitle>
-              <CardDescription>Teams and segments with elevated attrition risk</CardDescription>
+              <CardTitle className="text-lg">Attrition Hotspots by Department</CardTitle>
+              <CardDescription>Departments with the highest attrition rates</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {hotspots.map((spot) => (
@@ -113,7 +146,7 @@ const AttritionDashboard = () => {
                   <div className="flex-1">
                     <p className="text-sm font-medium">{spot.group}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {spot.count} employees · Drivers: {spot.drivers.join(", ")}
+                      {spot.count} leavers · Drivers: {spot.drivers.join(", ")}
                     </p>
                   </div>
                 </div>
@@ -122,15 +155,15 @@ const AttritionDashboard = () => {
           </Card>
         )}
 
-        {/* Executive: bar chart of hotspot risk */}
+        {/* Executive: bar chart of dept attrition */}
         {isExec && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Hotspot Risk Overview</CardTitle>
+              <CardTitle className="text-lg">Department Attrition Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{ count: { label: "At-Risk Employees", color: "hsl(var(--destructive))" } }} className="h-[200px] w-full">
-                <BarChart data={hotspots.map(h => ({ group: h.group.split("—")[0].trim(), count: h.count }))} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+              <ChartContainer config={{ count: { label: "Leavers", color: "hsl(var(--destructive))" } }} className="h-[200px] w-full">
+                <BarChart data={hotspots.map(h => ({ group: h.group, count: h.count }))} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="group" className="text-xs" />
                   <YAxis className="text-xs" />

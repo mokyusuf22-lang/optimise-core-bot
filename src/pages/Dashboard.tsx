@@ -13,17 +13,19 @@ const roleGreetings: Record<string, { title: string; subtitle: string }> = {
   senior_leader: { title: "Executive Summary", subtitle: "Strategic view of workforce risk indicators, cost impacts, and organisational health." },
 };
 
+// Real data from User_Story_Data.xlsx
 const kpiCards = [
-  { label: "Onboarding Risk", value: "23%", trend: "+2.1%", trendUp: true, icon: Users, color: "text-primary", link: "/dashboard/onboarding" },
-  { label: "Attrition Risk", value: "18%", trend: "-1.5%", trendUp: false, icon: AlertTriangle, color: "text-destructive", link: "/dashboard/attrition" },
-  { label: "Burnout Index", value: "31%", trend: "+4.3%", trendUp: true, icon: Activity, color: "text-accent", link: "/dashboard/burnout" },
-  { label: "Retention Rate", value: "87%", trend: "+0.8%", trendUp: false, icon: TrendingUp, color: "text-primary", link: "/dashboard/attrition" },
+  { label: "Onboarding Risk", value: "16%", trend: "+3.2%", trendUp: true, icon: Users, color: "text-primary", link: "/dashboard/onboarding" },
+  { label: "Attrition Rate", value: "17.1%", trend: "85 leavers", trendUp: true, icon: AlertTriangle, color: "text-destructive", link: "/dashboard/attrition" },
+  { label: "Burnout Index", value: "45", trend: "AI Lab highest", trendUp: true, icon: Activity, color: "text-accent", link: "/dashboard/burnout" },
+  { label: "Well-being Avg", value: "3.5/5", trend: "484 employees", trendUp: false, icon: TrendingUp, color: "text-primary", link: "/dashboard/burnout" },
 ];
 
 const recentInsights = [
-  { severity: "high", message: "Engineering team shows burnout risk: overtime +28%, sick leave +15%.", area: "Burnout" },
-  { severity: "medium", message: "New joiners in Ops have 35% higher drop-off risk due to delayed system access.", area: "Onboarding" },
-  { severity: "high", message: "High performers in Sales are 2.3x more likely to leave — compensation gap detected.", area: "Attrition" },
+  { severity: "high", message: "AI Lab shows highest burnout risk (score 45): avg overtime 20.4 hrs/wk, wellbeing 2.4/5.", area: "Burnout" },
+  { severity: "high", message: "Operations and Customer Support new joiners have risk scores 63–95 due to system access delays.", area: "Onboarding" },
+  { severity: "high", message: "'Better Offer / Comp' and 'Lack of Growth' tied as #1 exit reasons with 28 exits each.", area: "Attrition" },
+  { severity: "medium", message: "Customer Support has elevated sick leave (2.1 days/3mo) and low wellbeing (2.7/5).", area: "Burnout" },
 ];
 
 const Dashboard = () => {
@@ -53,7 +55,7 @@ const Dashboard = () => {
                   <CardContent>
                     <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>{value}</div>
                     <p className={`text-xs mt-1 ${trendUp ? "text-destructive" : "text-accent"}`}>
-                      {trend} from last period
+                      {trend}
                     </p>
                   </CardContent>
                 </Card>
@@ -68,7 +70,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg">Pal-D AI Insights</CardTitle>
-                <CardDescription>Latest automated diagnostics from your live service data</CardDescription>
+                <CardDescription>Key findings from 498 employees across 11 departments</CardDescription>
               </div>
               <Badge variant="outline" className="text-xs">Live</Badge>
             </div>
@@ -99,7 +101,6 @@ const Dashboard = () => {
   );
 };
 
-// cn helper inline for this file
 function cn(...classes: (string | undefined | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
