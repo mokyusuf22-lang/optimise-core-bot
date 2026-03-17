@@ -33,6 +33,8 @@ const App = () => (
             <Route path="/dashboard/burnout" element={<ProtectedRoute><BurnoutDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <PalDChatbot />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
