@@ -12,6 +12,7 @@ import OnboardingDashboard from "./pages/OnboardingDashboard";
 import AttritionDashboard from "./pages/AttritionDashboard";
 import BurnoutDashboard from "./pages/BurnoutDashboard";
 import NotFound from "./pages/NotFound";
+import PalDChatbot from "./components/PalDChatbot";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/dashboard/burnout" element={<ProtectedRoute><BurnoutDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <PalDChatbot />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
