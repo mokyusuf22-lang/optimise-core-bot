@@ -63,6 +63,31 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               {label}
             </NavLink>
           ))}
+
+          {role === "it_admin" && (
+            <>
+              <div className="pt-3 pb-1 px-3">
+                <p className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-semibold">Admin</p>
+              </div>
+              {adminNavItems.map(({ to, icon: Icon, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-primary"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                    )
+                  }
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         <div className="p-4 border-t border-sidebar-border">
