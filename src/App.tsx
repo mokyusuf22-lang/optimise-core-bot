@@ -13,6 +13,8 @@ import OnboardingDashboard from "./pages/OnboardingDashboard";
 import AttritionDashboard from "./pages/AttritionDashboard";
 import BurnoutDashboard from "./pages/BurnoutDashboard";
 import DataReadiness from "./pages/DataReadiness";
+import AdminRoles from "./pages/AdminRoles";
+import PromptLog from "./pages/PromptLog";
 import NotFound from "./pages/NotFound";
 import PalDChatbot from "./components/PalDChatbot";
 
