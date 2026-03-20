@@ -93,7 +93,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           )}
         </nav>
 
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-sidebar-border space-y-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:text-sidebar-foreground border-sidebar-border"
+            onClick={() => setTourOpen(true)}
+          >
+            <MapPin className="h-4 w-4 text-primary" />
+            Platform Tour
+          </Button>
           <div className="flex items-center gap-3 mb-3">
             <div className="h-8 w-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary text-xs font-bold">
               {user?.email?.[0]?.toUpperCase() ?? "U"}
@@ -115,15 +124,22 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Mobile header */}
         <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
           <h2 className="text-sm font-bold" style={{ fontFamily: "var(--font-heading)" }}>Mission Control</h2>
-          <Button variant="ghost" size="icon" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setTourOpen(true)}>
+              <MapPin className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
 
         <div className="p-6 lg:p-8 max-w-7xl mx-auto">
           {children}
         </div>
       </main>
+
+      <GuidedTour isOpen={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 };
