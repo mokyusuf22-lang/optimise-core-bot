@@ -29,6 +29,7 @@ const adminNavItems = [
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const [tourOpen, setTourOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
