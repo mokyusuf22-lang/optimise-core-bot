@@ -13,6 +13,8 @@ import OnboardingDashboard from "./pages/OnboardingDashboard";
 import AttritionDashboard from "./pages/AttritionDashboard";
 import BurnoutDashboard from "./pages/BurnoutDashboard";
 import DataReadiness from "./pages/DataReadiness";
+import AdminRoles from "./pages/AdminRoles";
+import PromptLog from "./pages/PromptLog";
 import NotFound from "./pages/NotFound";
 import PalDChatbot from "./components/PalDChatbot";
 
@@ -35,6 +37,8 @@ const App = () => (
               <Route path="/dashboard/attrition" element={<ProtectedRoute><AttritionDashboard /></ProtectedRoute>} />
               <Route path="/dashboard/burnout" element={<ProtectedRoute><BurnoutDashboard /></ProtectedRoute>} />
               <Route path="/dashboard/data-readiness" element={<ProtectedRoute><DataReadiness /></ProtectedRoute>} />
+              <Route path="/dashboard/admin-roles" element={<ProtectedRoute allowedRoles={["it_admin"]}><AdminRoles /></ProtectedRoute>} />
+              <Route path="/dashboard/prompt-log" element={<ProtectedRoute><PromptLog /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <PalDChatbot />

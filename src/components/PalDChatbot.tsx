@@ -1,41 +1,27 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Sparkles } from "lucide-react";
+import { X, Send, Sparkles, Loader2, Brain, HeartPulse, Bot, Database, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import palDAvatar from "@/assets/pal-d-avatar.jpg";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  agent?: string;
   actions?: { label: string; route: string }[];
 }
 
-const systemKnowledge = {
-  navigation: {
-    "/dashboard": "Overview — KPI summary of onboarding, attrition, burnout, and retention.",
-    "/dashboard/onboarding": "Onboarding — First-90-day risk scores, new joiner monitoring, access & engagement metrics.",
-    "/dashboard/attrition": "Attrition Risk — Hotspot analysis, predicted leavers, retention strategy options.",
-    "/dashboard/burnout": "Burnout & Capacity — Team burnout scores, overtime/sick leave trends, well-being indicators.",
-  },
-  recommendations: {
-    burnout: [
-      { title: "Redistribute Workload", desc: "Shift 15–20% of tasks from Engineering to less-loaded teams. Impact: High. Effort: Medium. Timeframe: 2 weeks." },
-      { title: "Hire Contract Support", desc: "Bring in 2–3 contractors for the quarter. Impact: High. Effort: High. Timeframe: 4–6 weeks." },
-      { title: "Enforce PTO Policy", desc: "Mandate minimum 1 day off per fortnight for high-overtime teams. Impact: Medium. Effort: Low. Timeframe: Immediate." },
-    ],
-    attrition: [
-      { title: "Compensation Review", desc: "Benchmark Sales high-performers against market. Close the gap to reduce 2.3x attrition risk. Impact: High. Effort: Medium." },
-      { title: "Career Path Framework", desc: "Introduce visible promotion tracks for Engineering mid-levels. Impact: High. Effort: Medium. Timeframe: 6–8 weeks." },
-      { title: "Stay Interviews", desc: "Conduct 1:1 retention conversations with the 40 high-risk employees. Impact: Medium. Effort: Low. Timeframe: 2 weeks." },
-    ],
-    onboarding: [
-      { title: "Pre-Provisioning Access", desc: "Set up system access before Day 1 to eliminate the 30% delay driver. Impact: High. Effort: Medium. Timeframe: 3 weeks." },
-      { title: "Buddy Programme", desc: "Pair every new joiner with a tenured team member for the first 30 days. Impact: Medium. Effort: Low. Timeframe: 1 week." },
-      { title: "Manager Check-In Cadence", desc: "Mandate weekly 15-min check-ins during the first 90 days. Impact: High. Effort: Low. Timeframe: Immediate." },
-    ],
-  },
+type AgentType = "analyst" | "intervention" | "onboarding" | "readiness" | "navigator";
+
+const agentMeta: Record<AgentType, { label: string; icon: typeof Brain; color: string; fn: string }> = {
+  analyst: { label: "Analyst", icon: Brain, color: "text-blue-500", fn: "agent-analyst" },
+  intervention: { label: "Advisor", icon: HeartPulse, color: "text-rose-500", fn: "agent-intervention" },
+  onboarding: { label: "Concierge", icon: Bot, color: "text-emerald-500", fn: "agent-onboarding" },
+  readiness: { label: "Coach", icon: Database, color: "text-amber-500", fn: "agent-readiness" },
+  navigator: { label: "Navigator", icon: Compass, color: "text-primary", fn: "" },
 };
 
 const suggestedPromptsByRoute: Record<string, string[]> = {
@@ -59,94 +45,88 @@ const suggestedPromptsByRoute: Record<string, string[]> = {
     "How can I reduce overtime immediately?",
     "Recommend interventions for at-risk teams",
   ],
+  "/dashboard/data-readiness": [
+    "Walk me through a data audit",
+    "What data do I actually need?",
+    "Help me assess my data readiness",
+  ],
 };
 
-function generateResponse(input: string, currentPath: string): Message {
+function detectAgent(input: string, currentPath: string): AgentType {
   const lower = input.toLowerCase();
-  const id = Date.now().toString();
+  if (lower.includes("navigate") || lower.includes("go to") || lower.includes("where") || lower.includes("show me") && lower.includes("page")) return "navigator";
+  if (lower.includes("data readiness") || lower.includes("audit") || lower.includes("missing data") || lower.includes("what data") || currentPath.includes("data-readiness") && (lower.includes("help") || lower.includes("walk"))) return "readiness";
+  if (lower.includes("onboard") || lower.includes("new joiner") || lower.includes("new hire") || lower.includes("pulse") || lower.includes("buddy") || currentPath.includes("onboarding") && (lower.includes("risk") || lower.includes("who"))) return "onboarding";
+  if (lower.includes("recommend") || lower.includes("action") || lower.includes("intervention") || lower.includes("what should") || lower.includes("what can") || lower.includes("how can") || lower.includes("how do") || lower.includes("strategy") || lower.includes("plan")) return "intervention";
+  if (lower.includes("why") || lower.includes("analy") || lower.includes("compare") || lower.includes("trend") || lower.includes("cause") || lower.includes("correlation") || lower.includes("across")) return "analyst";
+  // Default based on route
+  if (currentPath.includes("burnout") || currentPath.includes("attrition")) return "analyst";
+  return "analyst";
+}
 
-  if (lower.includes("navigate") || lower.includes("go to") || lower.includes("show me") || lower.includes("where")) {
-    return {
-      id, role: "assistant",
-      content: "Here are the areas you can explore in Mission Control:",
-      actions: [
-        { label: "📊 Overview", route: "/dashboard" },
-        { label: "👥 Onboarding", route: "/dashboard/onboarding" },
-        { label: "⚠️ Attrition Risk", route: "/dashboard/attrition" },
-        { label: "🔥 Burnout & Capacity", route: "/dashboard/burnout" },
-      ],
-    };
+const CHAT_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+
+async function streamFromAgent(
+  agentFn: string,
+  messages: { role: string; content: string }[],
+  onDelta: (text: string) => void,
+  onDone: () => void,
+  onError: (err: string) => void,
+) {
+  const resp = await fetch(`${CHAT_BASE}/${agentFn}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({ error: "Request failed" }));
+    onError(data.error || `Error ${resp.status}`);
+    return;
   }
 
-  if (lower.includes("recommend") || lower.includes("suggestion") || lower.includes("what should") || lower.includes("what can") || lower.includes("options") || lower.includes("intervention") || lower.includes("how can") || lower.includes("how do")) {
-    let area: "burnout" | "attrition" | "onboarding" = "burnout";
-    if (lower.includes("attrition") || lower.includes("retention") || lower.includes("leav")) area = "attrition";
-    else if (lower.includes("onboard") || lower.includes("new joiner") || lower.includes("new hire") || lower.includes("drop-off")) area = "onboarding";
-    else if (currentPath.includes("attrition")) area = "attrition";
-    else if (currentPath.includes("onboarding")) area = "onboarding";
+  if (!resp.body) { onError("No response body"); return; }
 
-    const recs = systemKnowledge.recommendations[area];
-    const content = `**${area.charAt(0).toUpperCase() + area.slice(1)} Recommendations:**\n\n${recs.map((r, i) => `**${i + 1}. ${r.title}**\n${r.desc}`).join("\n\n")}`;
-    return { id, role: "assistant", content };
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    let nlIdx: number;
+    while ((nlIdx = buffer.indexOf("\n")) !== -1) {
+      let line = buffer.slice(0, nlIdx);
+      buffer = buffer.slice(nlIdx + 1);
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (!line.startsWith("data: ")) continue;
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === "[DONE]") { onDone(); return; }
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content;
+        if (content) onDelta(content);
+      } catch {
+        buffer = line + "\n" + buffer;
+        break;
+      }
+    }
   }
-
-  if (lower.includes("what") && (lower.includes("this") || lower.includes("page") || lower.includes("here"))) {
-    const desc = systemKnowledge.navigation[currentPath as keyof typeof systemKnowledge.navigation] || "You're viewing the Mission Control platform.";
-    return { id, role: "assistant", content: `You're currently on: **${desc}**\n\nWould you like recommendations for this area, or would you like to navigate somewhere else?` };
-  }
-
-  if (lower.includes("priority") || lower.includes("attention") || lower.includes("first") || lower.includes("key risk")) {
-    return {
-      id, role: "assistant",
-      content: "**Top Priorities Right Now:**\n\n**1. Engineering Burnout** — Score 78/100, attrition predicted in 6–8 weeks\n**2. Sales Attrition** — High performers 2.3x more likely to leave\n**3. Onboarding Drop-off** — Ops new joiners at 35% higher risk\n\nWould you like intervention options for any of these?",
-      actions: [
-        { label: "🔥 Burnout Actions", route: "/dashboard/burnout" },
-        { label: "⚠️ Attrition Actions", route: "/dashboard/attrition" },
-        { label: "👥 Onboarding Actions", route: "/dashboard/onboarding" },
-      ],
-    };
-  }
-
-  if (lower.includes("burnout") || lower.includes("overtime") || lower.includes("capacity") || lower.includes("engineering")) {
-    const recs = systemKnowledge.recommendations.burnout;
-    return { id, role: "assistant", content: `**Burnout Risk Analysis:**\n\nEngineering is the highest-risk team with a burnout score of 78/100. Here are my recommendations:\n\n${recs.map((r, i) => `**${i + 1}. ${r.title}** — ${r.desc}`).join("\n\n")}`,
-      actions: [{ label: "View Burnout Dashboard", route: "/dashboard/burnout" }],
-    };
-  }
-
-  if (lower.includes("attrition") || lower.includes("leav") || lower.includes("quit") || lower.includes("retention") || lower.includes("sales")) {
-    const recs = systemKnowledge.recommendations.attrition;
-    return { id, role: "assistant", content: `**Attrition Risk Summary:**\n\n18% overall risk. Sales high-performers are 2.3x more likely to leave. Intervention options:\n\n${recs.map((r, i) => `**${i + 1}. ${r.title}** — ${r.desc}`).join("\n\n")}`,
-      actions: [{ label: "View Attrition Dashboard", route: "/dashboard/attrition" }],
-    };
-  }
-
-  if (lower.includes("onboard") || lower.includes("new hire") || lower.includes("new joiner") || lower.includes("manager engagement")) {
-    const recs = systemKnowledge.recommendations.onboarding;
-    return { id, role: "assistant", content: `**Onboarding Effectiveness:**\n\n23% risk score overall. Ops department has 35% higher drop-off. Recommendations:\n\n${recs.map((r, i) => `**${i + 1}. ${r.title}** — ${r.desc}`).join("\n\n")}`,
-      actions: [{ label: "View Onboarding Dashboard", route: "/dashboard/onboarding" }],
-    };
-  }
-
-  if (lower.includes("compare") || lower.includes("across")) {
-    return {
-      id, role: "assistant",
-      content: "**Cross-Department Risk Comparison:**\n\n| Department | Attrition Risk | Burnout | Onboarding |\n|---|---|---|---|\n| Engineering | 1.8x | 78/100 🔴 | Low |\n| Sales | 2.3x 🔴 | 38/100 | Low |\n| Operations | 1.5x | 55/100 | High 🔴 |\n| Finance | 1.3x | 20/100 | Medium |\n| Customer Support | — | 62/100 | — |\n\nEngineering and Sales need the most urgent attention.",
-    };
-  }
-
-  return {
-    id, role: "assistant",
-    content: "I'm **Pal-D**, your diagnostic AI assistant. I can help you:\n\n• **Navigate** the platform\n• **Get recommendations** for burnout, attrition, or onboarding\n• **Explain** what you're looking at\n• **Prioritise** across all risk areas\n\nTry one of the prompts above, or ask me anything!",
-  };
+  onDone();
 }
 
 const PalDChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { id: "welcome", role: "assistant", content: "Hey! I'm **Pal-D** 👋 Your AI diagnostic assistant.\n\nI can help you navigate, explore insights, and get actionable recommendations. Try the prompts above or ask me anything!" },
+    { id: "welcome", role: "assistant", content: "Hey! I'm **Pal-D** 👋 Your AI diagnostic assistant.\n\nI can connect you to specialised AI agents for analysis, recommendations, onboarding monitoring, and data readiness coaching. Try the prompts above or ask me anything!", agent: "navigator" },
   ]);
   const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -155,39 +135,79 @@ const PalDChatbot = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = useCallback((text?: string) => {
+  const handleSend = useCallback(async (text?: string) => {
     const msg = text || input;
-    if (!msg.trim()) return;
+    if (!msg.trim() || isStreaming) return;
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: msg };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    setTimeout(() => {
-      const response = generateResponse(msg, location.pathname);
-      setMessages((prev) => [...prev, response]);
-    }, 400);
-  }, [input, location.pathname]);
+    const agent = detectAgent(msg, location.pathname);
+    const meta = agentMeta[agent];
 
-  const renderMarkdown = (text: string) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br/>');
-  };
+    // Navigator handles locally
+    if (agent === "navigator") {
+      setTimeout(() => {
+        setMessages((prev) => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          agent: "navigator",
+          content: "Here are the areas you can explore:",
+          actions: [
+            { label: "📊 Overview", route: "/dashboard" },
+            { label: "👥 Onboarding", route: "/dashboard/onboarding" },
+            { label: "⚠️ Attrition Risk", route: "/dashboard/attrition" },
+            { label: "🔥 Burnout & Capacity", route: "/dashboard/burnout" },
+            { label: "📋 Data Readiness", route: "/dashboard/data-readiness" },
+          ],
+        }]);
+      }, 200);
+      return;
+    }
+
+    // Stream from AI agent
+    setIsStreaming(true);
+    const assistantId = (Date.now() + 1).toString();
+    let accumulated = "";
+
+    // Build conversation history for context
+    const history = messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .slice(-10)
+      .map((m) => ({ role: m.role, content: m.content }));
+    history.push({ role: "user", content: msg });
+
+    // Add placeholder
+    setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "", agent }]);
+
+    await streamFromAgent(
+      meta.fn,
+      history,
+      (delta) => {
+        accumulated += delta;
+        setMessages((prev) =>
+          prev.map((m) => m.id === assistantId ? { ...m, content: accumulated } : m)
+        );
+      },
+      () => setIsStreaming(false),
+      (err) => {
+        setMessages((prev) =>
+          prev.map((m) => m.id === assistantId ? { ...m, content: `⚠️ ${err}` } : m)
+        );
+        setIsStreaming(false);
+      },
+    );
+  }, [input, location.pathname, isStreaming, messages]);
 
   const suggestedPrompts = suggestedPromptsByRoute[location.pathname] || suggestedPromptsByRoute["/dashboard"];
 
   return (
     <>
-      {/* Floating button */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
             onClick={() => setIsOpen(true)}
             className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg overflow-hidden border-2 border-primary/30 hover:border-primary transition-colors"
           >
@@ -197,14 +217,13 @@ const PalDChatbot = () => {
         )}
       </AnimatePresence>
 
-      {/* Chat window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] h-[540px] rounded-2xl bg-card border border-border shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 z-50 w-[400px] h-[560px] rounded-2xl bg-card border border-border shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground">
@@ -213,7 +232,7 @@ const PalDChatbot = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold">Pal-D</p>
-                <p className="text-[10px] opacity-80">Diagnostic AI Assistant</p>
+                <p className="text-[10px] opacity-80">AI-Powered • 4 Specialist Agents</p>
               </div>
               <div className="flex items-center gap-1">
                 <Sparkles className="h-3.5 w-3.5 opacity-60" />
@@ -224,7 +243,7 @@ const PalDChatbot = () => {
               </Button>
             </div>
 
-            {/* Suggested prompts — above messages */}
+            {/* Suggested prompts */}
             <div className="px-3 py-2 border-b border-border bg-muted/30">
               <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">Suggested</p>
               <div className="flex flex-wrap gap-1.5">
@@ -232,7 +251,8 @@ const PalDChatbot = () => {
                   <button
                     key={prompt}
                     onClick={() => handleSend(prompt)}
-                    className="text-[10px] px-2.5 py-1 rounded-full bg-card border border-border text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    disabled={isStreaming}
+                    className="text-[10px] px-2.5 py-1 rounded-full bg-card border border-border text-foreground hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
                   >
                     {prompt}
                   </button>
@@ -249,7 +269,15 @@ const PalDChatbot = () => {
                       ? "bg-primary text-primary-foreground rounded-br-sm"
                       : "bg-muted text-foreground rounded-bl-sm"
                   }`}>
-                    <div dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
+                    {msg.agent && msg.role === "assistant" && (
+                      <AgentBadge agent={msg.agent as AgentType} />
+                    )}
+                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-li:my-0.5 prose-table:text-xs">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                    {msg.role === "assistant" && !msg.content && isStreaming && (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
                     {msg.actions && (
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {msg.actions.map((action) => (
@@ -275,10 +303,11 @@ const PalDChatbot = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask Pal-D anything..."
-                  className="flex-1 text-sm px-3 py-2 rounded-lg bg-muted border border-input focus:outline-none focus:ring-1 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+                  disabled={isStreaming}
+                  className="flex-1 text-sm px-3 py-2 rounded-lg bg-muted border border-input focus:outline-none focus:ring-1 focus:ring-ring text-foreground placeholder:text-muted-foreground disabled:opacity-50"
                 />
-                <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={!input.trim()}>
-                  <Send className="h-4 w-4" />
+                <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={!input.trim() || isStreaming}>
+                  {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </form>
             </div>
@@ -288,5 +317,17 @@ const PalDChatbot = () => {
     </>
   );
 };
+
+function AgentBadge({ agent }: { agent: AgentType }) {
+  const meta = agentMeta[agent];
+  if (!meta) return null;
+  const Icon = meta.icon;
+  return (
+    <div className={`flex items-center gap-1 mb-1.5 ${meta.color}`}>
+      <Icon className="h-3 w-3" />
+      <span className="text-[10px] font-semibold">{meta.label} Agent</span>
+    </div>
+  );
+}
 
 export default PalDChatbot;
