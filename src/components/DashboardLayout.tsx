@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Users, AlertTriangle, Activity, Database } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, AlertTriangle, Activity, Database, Shield, BookOpen } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,11 @@ const navItems = [
   { to: "/dashboard/attrition", icon: AlertTriangle, label: "Attrition Risk" },
   { to: "/dashboard/burnout", icon: Activity, label: "Burnout & Capacity" },
   { to: "/dashboard/data-readiness", icon: Database, label: "Data Readiness" },
+  { to: "/dashboard/prompt-log", icon: BookOpen, label: "AI Prompt Log" },
+];
+
+const adminNavItems = [
+  { to: "/dashboard/admin-roles", icon: Shield, label: "Role Management" },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
