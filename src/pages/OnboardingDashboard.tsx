@@ -54,7 +54,7 @@ const riskLabel = (score: number) => {
 };
 
 const OnboardingDashboard = () => {
-  const { role } = useAuth();
+  const role = "hr"; // default role since auth is disabled
   const { view } = useDashboardView();
   const isExec = view === "executive";
 
