@@ -1,4 +1,3 @@
-import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,14 +5,6 @@ import { motion } from "framer-motion";
 import { Users, AlertTriangle, Activity, TrendingUp, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const roleGreetings: Record<string, { title: string; subtitle: string }> = {
-  manager: { title: "Team Performance Overview", subtitle: "Monitor your direct reports' onboarding progress, engagement, and well-being." },
-  hr: { title: "Organisation-Wide Insights", subtitle: "Analyse workforce health across onboarding, retention, and capacity dimensions." },
-  it_admin: { title: "Platform Operations", subtitle: "Monitor data pipeline health, system integrations, and platform performance." },
-  senior_leader: { title: "Executive Summary", subtitle: "Strategic view of workforce risk indicators, cost impacts, and organisational health." },
-};
-
-// Real data from User_Story_Data.xlsx
 const kpiCards = [
   { label: "Onboarding Risk", value: "16%", trend: "+3.2%", trendUp: true, icon: Users, color: "text-primary", link: "/dashboard/onboarding" },
   { label: "Attrition Rate", value: "17.1%", trend: "85 leavers", trendUp: true, icon: AlertTriangle, color: "text-destructive", link: "/dashboard/attrition" },
@@ -28,21 +19,21 @@ const recentInsights = [
   { severity: "medium", message: "Customer Support has elevated sick leave (2.1 days/3mo) and low wellbeing (2.7/5).", area: "Burnout" },
 ];
 
-const Dashboard = () => {
-  const { role } = useAuth();
-  const greeting = roleGreetings[role ?? "hr"];
+function cn(...classes: (string | undefined | false)[]) {
+  return classes.filter(Boolean).join(" ");
+}
 
+const Dashboard = () => {
   return (
     <DashboardLayout>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-            {greeting.title}
+            Organisation-Wide Insights
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">{greeting.subtitle}</p>
+          <p className="text-muted-foreground text-sm mt-1">Analyse workforce health across onboarding, retention, and capacity dimensions.</p>
         </div>
 
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {kpiCards.map(({ label, value, trend, trendUp, icon: Icon, color, link }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
@@ -54,9 +45,7 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>{value}</div>
-                    <p className={`text-xs mt-1 ${trendUp ? "text-destructive" : "text-accent"}`}>
-                      {trend}
-                    </p>
+                    <p className={`text-xs mt-1 ${trendUp ? "text-destructive" : "text-accent"}`}>{trend}</p>
                   </CardContent>
                 </Card>
               </Link>
@@ -64,12 +53,11 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Pal-D Insights */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg">Pal-D AI Insights</CardTitle>
+                <CardTitle className="text-lg">Key Insights</CardTitle>
                 <CardDescription>Key findings from 498 employees across 11 departments</CardDescription>
               </div>
               <Badge variant="outline" className="text-xs">Live</Badge>
@@ -100,9 +88,5 @@ const Dashboard = () => {
     </DashboardLayout>
   );
 };
-
-function cn(...classes: (string | undefined | false)[]) {
-  return classes.filter(Boolean).join(" ");
-}
 
 export default Dashboard;

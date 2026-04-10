@@ -3,20 +3,13 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/useAuth";
 import { DashboardViewProvider } from "@/hooks/useDashboardView";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Login from "./pages/Login";
-import SelectRole from "./pages/SelectRole";
 import Dashboard from "./pages/Dashboard";
 import OnboardingDashboard from "./pages/OnboardingDashboard";
 import AttritionDashboard from "./pages/AttritionDashboard";
 import BurnoutDashboard from "./pages/BurnoutDashboard";
 import DataReadiness from "./pages/DataReadiness";
-import AdminRoles from "./pages/AdminRoles";
-import PromptLog from "./pages/PromptLog";
 import NotFound from "./pages/NotFound";
-import PalDChatbot from "./components/PalDChatbot";
 
 const queryClient = new QueryClient();
 
@@ -26,24 +19,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <DashboardViewProvider>
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/select-role" element={<SelectRole />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/dashboard/onboarding" element={<ProtectedRoute><OnboardingDashboard /></ProtectedRoute>} />
-              <Route path="/dashboard/attrition" element={<ProtectedRoute><AttritionDashboard /></ProtectedRoute>} />
-              <Route path="/dashboard/burnout" element={<ProtectedRoute><BurnoutDashboard /></ProtectedRoute>} />
-              <Route path="/dashboard/data-readiness" element={<ProtectedRoute><DataReadiness /></ProtectedRoute>} />
-              <Route path="/dashboard/admin-roles" element={<ProtectedRoute allowedRoles={["it_admin"]}><AdminRoles /></ProtectedRoute>} />
-              <Route path="/dashboard/prompt-log" element={<ProtectedRoute><PromptLog /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <PalDChatbot />
-          </DashboardViewProvider>
-        </AuthProvider>
+        <DashboardViewProvider>
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/onboarding" element={<OnboardingDashboard />} />
+            <Route path="/dashboard/attrition" element={<AttritionDashboard />} />
+            <Route path="/dashboard/burnout" element={<BurnoutDashboard />} />
+            <Route path="/dashboard/data-readiness" element={<DataReadiness />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </DashboardViewProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

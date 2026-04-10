@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import DashboardViewToggle from "@/components/DashboardViewToggle";
 import { useDashboardView } from "@/hooks/useDashboardView";
-import { useAuth } from "@/hooks/useAuth";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -54,7 +54,7 @@ const riskLabel = (score: number) => {
 };
 
 const OnboardingDashboard = () => {
-  const { role } = useAuth();
+  const role = "hr"; // default role since auth is disabled
   const { view } = useDashboardView();
   const isExec = view === "executive";
 
